@@ -4,15 +4,33 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [SerializeField]
+    private float movementSpeed = 5f;
+
+    [SerializeField]
+    private float rotationSpeed = 5f;
+
+    [SerializeField]
+    private GameInput gameInput;
+
+    private bool isWalking;
+
+    private void Update()
     {
-        
+        Vector2 inputVector = gameInput.GetMovementVectorNormalized();
+
+        Vector3 movementVector = new Vector3(inputVector.x, 0, inputVector.y);
+        transform.position += movementVector * Time.deltaTime * movementSpeed;
+        transform.forward = Vector3.Slerp(
+            transform.forward,
+            movementVector,
+            Time.deltaTime * rotationSpeed
+        );
+        isWalking = movementVector != Vector3.zero;
     }
 
-    // Update is called once per frame
-    void Update()
+    public bool IsWalking()
     {
-        
+        return isWalking;
     }
 }
