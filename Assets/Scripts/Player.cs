@@ -1,38 +1,40 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using System;
+using UnityEngine;
 
-public class Player : MonoBehaviour
+
+public class Player : MonoBehaviour, IKitchenObjectParent
 {
     public static Player Instance { get; private set; }
 
-    public event EventHandler OnSelectedCounterChanged;
+    public event EventHandler<OnSelectedCounterChangedEventArgs> OnSelectedCounterChanged;
 
     public class OnSelectedCounterChangedEventArgs : EventArgs
     {
-        public ClearCounter SelectedCounter;
+        public ClearCounter selectedCounter;
     }
 
-    [SerializeField]
-    private float movementSpeed = 5f;
-
-    [SerializeField]
-    private float rotationSpeed = 5f;
-
-    [SerializeField]
-    private GameInput gameInput;
-
-    [SerializeField]
-    private LayerMask counterLayerMask;
+    [SerializeField] private float movementSpeed = 5f;
+    [SerializeField] private Transform kitchenObjectHoldPoint;
+    [SerializeField] private float rotationSpeed = 5f;
+    [SerializeField] private GameInput gameInput;
+    [SerializeField] private LayerMask counterLayerMask;
 
     private bool isWalking;
     private Vector3 lastInteractDir;
     private ClearCounter selectedCounter;
+    private KitchenObject kitchenObject;
 
     private void Start()
     {
         gameInput.OnInteractAction += GameInput_OnInteractAction;
+    }
+
+    private void GameInput_OnInteractAction(object sender, EventArgs e)
+    {
+        if (selectedCounter != null)
+        {
+            selectedCounter.Interact(this);
+        }
     }
 
     private void Awake()
@@ -42,12 +44,6 @@ public class Player : MonoBehaviour
             Debug.LogError("Multiple instances of Player");
         }
         Instance = this;
-    }
-
-    private void GameInput_OnInteractAction(object sender, System.EventArgs e)
-    {
-        if (selectedCounter != null)
-            selectedCounter.Interact();
     }
 
     private void Update()
@@ -64,7 +60,7 @@ public class Player : MonoBehaviour
     private void HandleInteractions()
     {
         Vector2 inputVector = gameInput.GetMovementVectorNormalized();
-        Vector3 movementVector = new Vector3(inputVector.x, 0, inputVector.y);
+        Vector3 movementVector = new Vector3(inputVector.x, 0f, inputVector.y);
 
         if (movementVector != Vector3.zero)
             lastInteractDir = movementVector;
@@ -86,15 +82,15 @@ public class Player : MonoBehaviour
                 {
                     SetSelectedCounter(clearCounter);
                 }
-                else
-                {
-                    SetSelectedCounter(null);
-                }
+            }
+            else
+            {
+                SetSelectedCounter(null);
             }
         }
         else
         {
-            selectedCounter = null;
+            SetSelectedCounter(null);
         }
     }
 
@@ -155,7 +151,32 @@ public class Player : MonoBehaviour
 
         OnSelectedCounterChanged?.Invoke(
             this,
-            new OnSelectedCounterChangedEventArgs { SelectedCounter = selectedCounter }
+            new OnSelectedCounterChangedEventArgs { selectedCounter = selectedCounter }
         );
+    }
+
+    public Transform GetKitchenObjectFollowTransform()
+    {
+        return kitchenObjectHoldPoint;
+    }
+
+    public void SetKitchenObject(KitchenObject kitchenObject)
+    {
+        this.kitchenObject = kitchenObject;
+    }
+
+    public KitchenObject GetKitchenObject()
+    {
+        return kitchenObject;
+    }
+
+    public void ClearKitchenObject()
+    {
+        kitchenObject = null;
+    }
+
+    public bool HasKitchenObject()
+    {
+        return kitchenObject != null;
     }
 }
